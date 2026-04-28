@@ -19,6 +19,7 @@ namespace CKPE
 
 			virtual void Begin() noexcept(true);
 			virtual void End() noexcept(true);
+			[[nodiscard]] virtual bool HasMarquee() const noexcept(true);
 			virtual void SetMarquee(bool Value) noexcept(true);
 			virtual void SetPosition(std::uint32_t Completed) noexcept(true);
 			virtual void Step() noexcept(true);

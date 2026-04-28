@@ -37,10 +37,25 @@ namespace CKPE
 			static LPDWORD dwProgressLoadMax = nullptr;
 			static EditorAPI::BSString sProgressLoadText;
 
+			/*static UINT_PTR ProgressWindowTimer_handle = 0;
+			static void CALLBACK ProgressWindowTimerProc(HWND hwnd, UINT message, UINT idTimer, DWORD dwTime)
+			{
+				Common::Interface::GetSingleton()->GetApplication()->MessageProcessing();
+
+				if (ProgressTaskBarPtr && ProgressTaskBarPtr->HasMarquee())
+					ProgressWindow::Singleton.GetSingleton()->StepProgressBar();
+			}*/
+
 			ProgressWindow::ProgressWindow() : Common::PatchBaseWindow()
 			{
 				SetName("Progress Window");
 				Singleton = this;
+			}
+
+			void ProgressWindow::StepProgressBar() const noexcept(true)
+			{
+				auto s = ProgressWindow::Singleton.GetSingleton();
+				s->Progress.Perform(PBM_STEPIT, 0, 0);
 			}
 
 			bool ProgressWindow::HasOption() const noexcept(true)
@@ -77,7 +92,7 @@ namespace CKPE
 				auto base = _interface->GetApplication()->GetBase();
 
 				auto rva = (std::uintptr_t)(__CKPE_OFFSET(0));
-				//SafeWrite::WriteNop(rva, 2);
+				SafeWrite::WriteNop(rva, 2);
 				Detours::DetourCall(rva + 0x27, (std::uintptr_t)&sub1);
 
 				// Hook Loading Files...Initializing...
@@ -127,7 +142,7 @@ namespace CKPE
 							//ProgressTaskBarPtr->SetMarquee(true);
 						}
 
-						SetTimer(Hwnd, 2, 50, NULL);
+						//ProgressWindowTimer_handle = SetTimer(Hwnd, 0, 50, (TIMERPROC)&ProgressWindowTimerProc);
 
 						ShowWindow(Hwnd, SW_SHOW);
 						UpdateWindow(Hwnd);
@@ -135,7 +150,7 @@ namespace CKPE
 					return 0;
 					case WM_DESTROY:
 					{
-						KillTimer(Hwnd, 2);
+						//KillTimer(Hwnd, ProgressWindowTimer_handle);
 
 						if (ProgressTaskBarPtr)
 						{
@@ -151,11 +166,12 @@ namespace CKPE
 						s->Progress = nullptr;
 					}
 					return 0;
-					case WM_TIMER:
+					case WM_SHOWWINDOW:
 					{
-						if (wParam == 2)
+						if (wParam)
 						{
-							Common::Interface::GetSingleton()->GetApplication()->MessageProcessing();
+							auto s = ProgressWindow::Singleton.GetSingleton();
+							s->,
 						}
 					}
 					return 0;

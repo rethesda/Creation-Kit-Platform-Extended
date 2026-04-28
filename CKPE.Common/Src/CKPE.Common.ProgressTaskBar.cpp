@@ -30,6 +30,7 @@ namespace CKPE
 
 			void Begin() noexcept(true);
 			void End() noexcept(true);
+			bool HasMarquee() const noexcept(true);
 			void SetMarquee(bool Value) noexcept(true);
 			void SetPosition(std::uint32_t Completed) noexcept(true);
 			void Step() noexcept(true);
@@ -86,6 +87,11 @@ namespace CKPE
 		void ProgressTaskBarImpl::End() noexcept(true)
 		{
 			_beg = !SetProgressState(TBPF_NOPROGRESS);
+		}
+
+		bool ProgressTaskBarImpl::HasMarquee() const noexcept(true)
+		{
+			return _marquee;
 		}
 
 		void ProgressTaskBarImpl::SetMarquee(bool Value) noexcept(true)
@@ -153,6 +159,14 @@ namespace CKPE
 			auto it = ProgressTaskList.find((std::uintptr_t)LinkWnd);
 			if (it != ProgressTaskList.end())
 				it->second.End();
+		}
+
+		bool ProgressTaskBar::HasMarquee() const noexcept(true)
+		{
+			auto it = ProgressTaskList.find((std::uintptr_t)LinkWnd);
+			if (it != ProgressTaskList.end())
+				return it->second.HasMarquee();
+			return false;
 		}
 
 		void ProgressTaskBar::SetMarquee(bool Value) noexcept(true)

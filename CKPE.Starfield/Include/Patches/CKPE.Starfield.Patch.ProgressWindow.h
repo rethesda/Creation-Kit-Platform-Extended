@@ -32,6 +32,7 @@ namespace CKPE
 			public:
 				ProgressWindow();
 
+				virtual void StepProgressBar() const noexcept(true);
 				virtual bool HasOption() const noexcept(true);
 				virtual const char* GetOptionName() const noexcept(true);
 				virtual bool HasDependencies() const noexcept(true);
