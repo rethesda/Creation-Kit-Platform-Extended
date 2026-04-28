@@ -100,6 +100,41 @@ namespace CKPE
 				}
 			}
 
+			namespace IO
+			{
+				static HANDLE _hook_CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+					DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) noexcept
+				{
+					if (!(dwFlagsAndAttributes & FILE_FLAG_WRITE_THROUGH))
+					{
+						if (dwFlagsAndAttributes & FILE_FLAG_OVERLAPPED)
+							dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
+
+						if (dwFlagsAndAttributes & FILE_FLAG_NO_BUFFERING)
+							dwFlagsAndAttributes &= ~FILE_FLAG_NO_BUFFERING;
+					}
+
+					return CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
+						dwFlagsAndAttributes, hTemplateFile);
+				}
+
+				static HANDLE _hook_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+					DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) noexcept
+				{
+					if (!(dwFlagsAndAttributes & FILE_FLAG_WRITE_THROUGH))
+					{
+						if (dwFlagsAndAttributes & FILE_FLAG_OVERLAPPED)
+							dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
+
+						if (dwFlagsAndAttributes & FILE_FLAG_NO_BUFFERING)
+							dwFlagsAndAttributes &= ~FILE_FLAG_NO_BUFFERING;
+					}
+
+					return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
+						dwFlagsAndAttributes, hTemplateFile);
+				}
+			}
+
 			static HANDLE HKFindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData) noexcept(true)
 			{
 				return FindFirstFileExA(lpFileName, FindExInfoStandard, lpFindFileData, FindExSearchNameMatch,
@@ -152,7 +187,8 @@ namespace CKPE
 				// - Eliminate millions of calls to update the statusbar
 				// - Increasing the read memory buffer to reduce disk access
 				// - Reducing spin time. Important: materials are loaded in the background.
-				// - (1_16_236_0) Fixed bugs this version CK, relative path for this functions - errors.
+				// - Fixed bugs this version CK, relative path for this functions - errors.
+				// - IO enable random access.
 
 				Detours::DetourIAT(base, "kernel32.dll", "FindFirstFileA", (std::uintptr_t)&HKFindFirstFileA);
 
@@ -178,21 +214,22 @@ namespace CKPE
 					// full skip "%s: Imported file missing: %s"
 					text.Write(__CKPE_OFFSET(10), { 0xEB });
 
-					if (VersionLists::GetEditorVersion() == VersionLists::EDITOR_STARFIELD_1_16_236_0)
-					{
-						INI::app_pathw = PathUtils::GetApplicationPath();
-						INI::app_path = StringUtils::Utf16ToWinCP(INI::app_pathw);
+					INI::app_pathw = PathUtils::GetApplicationPath();
+					INI::app_path = StringUtils::Utf16ToWinCP(INI::app_pathw);
 
-						// Fixed bugs this version CK, relative path for this functions - errors
-						Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileIntA", (uintptr_t)&INI::_hook_GetPrivateProfileIntA);
-						Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileIntW", (uintptr_t)&INI::_hook_GetPrivateProfileIntW);
-						Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStringA", (uintptr_t)&INI::_hook_GetPrivateProfileStringA);
-						Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStringW", (uintptr_t)&INI::_hook_GetPrivateProfileStringW);
-						Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStructA", (uintptr_t)&INI::_hook_GetPrivateProfileStructA);
-						Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStringA", (uintptr_t)&INI::_hook_WritePrivateProfileStringA);
-						Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStringW", (uintptr_t)&INI::_hook_WritePrivateProfileStringW);
-						Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStructA", (uintptr_t)&INI::_hook_WritePrivateProfileStructA);
-					}
+					// Fixed bugs this version CK, relative path for this functions - errors
+					Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileIntA", (uintptr_t)&INI::_hook_GetPrivateProfileIntA);
+					Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileIntW", (uintptr_t)&INI::_hook_GetPrivateProfileIntW);
+					Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStringA", (uintptr_t)&INI::_hook_GetPrivateProfileStringA);
+					Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStringW", (uintptr_t)&INI::_hook_GetPrivateProfileStringW);
+					Detours::DetourIAT(base, "kernel32.dll", "GetPrivateProfileStructA", (uintptr_t)&INI::_hook_GetPrivateProfileStructA);
+					Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStringA", (uintptr_t)&INI::_hook_WritePrivateProfileStringA);
+					Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStringW", (uintptr_t)&INI::_hook_WritePrivateProfileStringW);
+					Detours::DetourIAT(base, "kernel32.dll", "WritePrivateProfileStructA", (uintptr_t)&INI::_hook_WritePrivateProfileStructA);
+					
+					// IO random access
+					Detours::DetourIAT(base, "kernel32.dll", "CreateFileA", (uintptr_t)&IO::_hook_CreateFileA);
+					Detours::DetourIAT(base, "kernel32.dll", "CreateFileW", (uintptr_t)&IO::_hook_CreateFileW);
 				}
 
 				// Reducing spin time.

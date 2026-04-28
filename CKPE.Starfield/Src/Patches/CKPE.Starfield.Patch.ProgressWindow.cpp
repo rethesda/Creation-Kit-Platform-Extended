@@ -37,15 +37,6 @@ namespace CKPE
 			static LPDWORD dwProgressLoadMax = nullptr;
 			static EditorAPI::BSString sProgressLoadText;
 
-			/*static UINT_PTR ProgressWindowTimer_handle = 0;
-			static void CALLBACK ProgressWindowTimerProc(HWND hwnd, UINT message, UINT idTimer, DWORD dwTime)
-			{
-				Common::Interface::GetSingleton()->GetApplication()->MessageProcessing();
-
-				if (ProgressTaskBarPtr && ProgressTaskBarPtr->HasMarquee())
-					ProgressWindow::Singleton.GetSingleton()->StepProgressBar();
-			}*/
-
 			ProgressWindow::ProgressWindow() : Common::PatchBaseWindow()
 			{
 				SetName("Progress Window");
@@ -142,16 +133,12 @@ namespace CKPE
 							//ProgressTaskBarPtr->SetMarquee(true);
 						}
 
-						//ProgressWindowTimer_handle = SetTimer(Hwnd, 0, 50, (TIMERPROC)&ProgressWindowTimerProc);
-
 						ShowWindow(Hwnd, SW_SHOW);
 						UpdateWindow(Hwnd);
 					}
 					return 0;
 					case WM_DESTROY:
 					{
-						//KillTimer(Hwnd, ProgressWindowTimer_handle);
-
 						if (ProgressTaskBarPtr)
 						{
 							delete ProgressTaskBarPtr;
@@ -168,10 +155,10 @@ namespace CKPE
 					return 0;
 					case WM_SHOWWINDOW:
 					{
-						if (wParam)
+						if (wParam && ProgressTaskBarPtr)
 						{
-							auto s = ProgressWindow::Singleton.GetSingleton();
-							s->,
+							ProgressTaskBarPtr->SetMarquee(false);
+							ProgressTaskBarPtr->SetPosition(0);
 						}
 					}
 					return 0;
